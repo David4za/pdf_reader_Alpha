@@ -80,7 +80,7 @@ def sales_text():
         # some motors have the text "Maximum torque limted by gearbox" so for these I need to build a special structure
         elif i == 2:
             # Here I use Panda's .str function, that essentially loops through items inside the series for me and allows me to preform string operators i.e. slicing and lower()
-            matching_index = (dfs[1]["Col_1"].str[:len("Maximum Torque")].str.lower() == spec.lower()).idxmax()
+            matching_index = (dfs[1]["Col_1"].str[:len("MaximumTorque")].str.lower() == spec.lower()).idxmax()
             sales_text_df.loc[i, "Value"] = dfs[1].loc[matching_index,"Col_2"]
 
 
