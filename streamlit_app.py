@@ -335,7 +335,8 @@ if uploaded_file:
 
         sales_text_df = sales_text()
         st.subheader("Sales Text (editable)")
-        edited_sales_text_df = st.data_editor(sales_text_df, use_container_width=True)
+        with st.expander("edit text"):
+            edited_sales_text_df = st.data_editor(sales_text_df, use_container_width=True)
         edited_sales_text = "\n".join(f"{row['Specification']}: {row['Value']}" for i, row in edited_sales_text_df.iterrows())
 
         st.subheader("Sales Text")
