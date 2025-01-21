@@ -339,7 +339,7 @@ if uploaded_file:
         edited_sales_text = "\n".join(f"{row['Specification']}: {row['Value']}" for i, row in edited_sales_text_df.iterrows())
 
         st.subheader("Sales Text")
-        st.text_input('Sales Text', edited_sales_text)
+        st.text(edited_sales_text)
 
         inkoop_text_df = inkoop_text()
         st.subheader("Purchase Text (editable)")
