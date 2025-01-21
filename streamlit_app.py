@@ -335,7 +335,7 @@ if uploaded_file:
 
         sales_text_df = sales_text()
         st.subheader("Sales Text")
-        with st.expander("Sales DateFrame (Editable"):
+        with st.expander("Sales DateFrame (Editable)"):
             edited_sales_text_df = st.data_editor(sales_text_df, use_container_width=True)
         edited_sales_text = "\n".join(f"{row['Specification']}: {row['Value']}" for i, row in edited_sales_text_df.iterrows())
 
@@ -344,7 +344,8 @@ if uploaded_file:
 
         inkoop_text_df = inkoop_text()
         st.subheader("Purchase Text (editable)")
-        edited_inkoop_text_df = st.data_editor(inkoop_text_df, use_container_width=True)
+        with st.expander("Inkoop DateFrame (Editable)"):
+            edited_inkoop_text_df = st.data_editor(inkoop_text_df, use_container_width=True)
         edited_inkoop_text = "\n".join(f"{row['Keys']}: {row['Details']}" for i, row in edited_inkoop_text_df.iterrows())
 
         st.subheader("Inkoop Text")
