@@ -6,9 +6,13 @@ import pdfplumber
 from io import BytesIO
 
 def pdf_reader_plumber(pdf_path):
-    def clean_cell(cell):
+    def clean_cell(cell, is_special_case=False):
         """Ensure the text is clean, fixing spacing issues."""
         if isinstance(cell, str):
+            # Remove spaces between numbers and units for the special case (like "GR 63X55")
+            if is_special_case:
+                cell = re.sub(r'(\d) (\D)', r'\1\2', cell)  # e.g., "63 X 55" becomes "63X55"
+            
             # Replace multiple spaces with a single space
             cell = ' '.join(cell.split())
             # Replace missing spaces between numbers and units, e.g., "33501/min" to "3350 1/min"
@@ -29,6 +33,10 @@ def pdf_reader_plumber(pdf_path):
                     # Clean each cell in the DataFrame
                     df = df.applymap(clean_cell)
 
+                    # Apply special case to the first cell
+                    if len(df) > 0 and len(df.columns) > 0:
+                        df.iloc[0, 0] = clean_cell(df.iloc[0, 0], is_special_case=True)
+
                     # Set generic column names
                     df.columns = [f'Col_{j+1}' for j in range(df.shape[1])]
 
@@ -38,6 +46,7 @@ def pdf_reader_plumber(pdf_path):
                     # Append the DataFrame to the list
                     dfs.append(df)
     return dfs
+
 
 def gearbox_check():
     # ensure Col_1 exist and the df has enough variables
