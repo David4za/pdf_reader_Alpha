@@ -334,8 +334,8 @@ if uploaded_file:
         dfs = pdf_reader_plumber(uploaded_file)
 
         sales_text_df = sales_text()
-        st.subheader("Sales Text (editable)")
-        with st.expander("edit text"):
+        st.subheader("Sales Text")
+        with st.expander("Sales DateFrame (Editable"):
             edited_sales_text_df = st.data_editor(sales_text_df, use_container_width=True)
         edited_sales_text = "\n".join(f"{row['Specification']}: {row['Value']}" for i, row in edited_sales_text_df.iterrows())
 
