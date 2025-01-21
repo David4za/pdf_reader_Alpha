@@ -335,11 +335,15 @@ if uploaded_file:
 
         sales_text_df = sales_text()
         st.subheader("Sales Text (editable)")
-        edited_sales_text = st.data_editor(sales_text_df, use_container_width=True)
+        edited_sales_text_df = st.data_editor(sales_text_df, use_container_width=True)
+        edited_sales_text = "\n".join(f"{row['Specification']}: {row['Value']}" for i, row in edited_sales_text_df.iterrows())
+
+        st.subheader("Sales Text")
+        st.text_input('Sales Text', edited_sales_text)
 
         inkoop_text_df = inkoop_text()
         st.subheader("Purchase Text (editable)")
-        edited_inkoop_text = st.data_editor(inkoop_text_df, use_container_width=True)
+        edited_inkoop_text_df = st.data_editor(inkoop_text_df, use_container_width=True)
 
         description_one = description_1()
         description_two = description_2()
@@ -350,8 +354,8 @@ if uploaded_file:
 
         output = BytesIO()
         with pd.ExcelWriter(output, engine="xlsxwriter") as writer:
-            edited_sales_text.to_excel(writer, index=False, sheet_name="Sales Text")
-            edited_inkoop_text.to_excel(writer, index=False, sheet_name="Inkoop Text")
+            edited_sales_text_df.to_excel(writer, index=False, sheet_name="Sales Text")
+            edited_inkoop_text_df.to_excel(writer, index=False, sheet_name="Inkoop Text")
         output.seek(0)
 
         st.download_button(
