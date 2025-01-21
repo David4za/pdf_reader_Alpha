@@ -287,7 +287,7 @@ def inkoop_text():
     else:
         inkoop_text_df.loc[3, "Details"] = encoder_text_p1 + f'-{encoder_channel}-{encoder_resolution.strip()} {encoder_volt}'
 
-
+    inkoop_text_df.loc[0, "Details"] = re.sub(r'(\d+)\sX\s(\d+)', r'\1X\2', inkoop_text_df.loc[0, "Details"])
     return inkoop_text_df
 
 def description_1():
