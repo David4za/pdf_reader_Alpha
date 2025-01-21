@@ -1,23 +1,42 @@
+import datetime
 import re
 import streamlit as st
 import pandas as pd
-import openpyxl
-import tabula
+import pdfplumber
+from io import BytesIO
 
-def pdf_reader(pdf_file):
-    dfs =[]
-    tables = tabula.read_pdf(pdf_file, pages="all", multiple_tables=True, pandas_options={"header":None})
+def pdf_reader_plumber(pdf_path):
+    def clean_cell(cell):
+        """Ensure the text is clean, fixing spacing issues."""
+        if isinstance(cell, str):
+            # Replace multiple spaces with a single space
+            cell = ' '.join(cell.split())
+            # Replace missing spaces between numbers and units, e.g., "33501/min" to "3350 1/min"
+            cell = re.sub(r'(\d)(?=[A-Za-z])', r'\1 ', cell)
+            # Replace missing spaces between letters and numbers, e.g., "94,7W" to "94,7 W"
+            cell = re.sub(r'([A-Za-z])(?=\d)', r'\1 ', cell)
+        return cell
 
-    # loop through each 
-    for i, table in enumerate(tables):
-        # This is to create a generic column name for each df instead of the first row of each table
-        table.columns = [f"Col_{j+1}" for j in range(table.shape[1])]
+    dfs = []
+    with pdfplumber.open(pdf_path) as pdf:
+        for page_number, page in enumerate(pdf.pages, start=1):
+            tables = page.extract_tables()
+            for table_number, table in enumerate(tables):
+                if table:
+                    # Convert the table to a DataFrame
+                    df = pd.DataFrame(table)
 
-        # reset index position
-        table.reset_index(drop=True, inplace=True)
-        
-        dfs.append(table)
-    
+                    # Clean each cell in the DataFrame
+                    df = df.applymap(clean_cell)
+
+                    # Set generic column names
+                    df.columns = [f'Col_{j+1}' for j in range(df.shape[1])]
+
+                    # Reset index position
+                    df.reset_index(drop=True, inplace=True)
+
+                    # Append the DataFrame to the list
+                    dfs.append(df)
     return dfs
 
 def gearbox_check():
@@ -31,6 +50,9 @@ def gearbox_check():
                 return True
     return False # if it does not exist 
 
+def normalize_text(text):
+    return text.replace(" ", "").lower()
+
 def sales_text():
     d = {
         "Specification":["Nominal Speed", "Nominal Torque", "Maximum Torque", "Version", 'Output Shaft Diameter',"Output Shaft Length"],
@@ -39,12 +61,20 @@ def sales_text():
     d["Value"] = [None] * len(d["Specification"])
     sales_text_df = pd.DataFrame(data=d)
 
+    # normalize text to combat the pdf plumber changes
+    sales_text_df["norm_spec"] = sales_text_df['Specification'].apply(normalize_text)
+
+    for df in dfs:
+        df['Col_3'] = df['Col_1'].apply(normalize_text)
+
     # d[0:2]
-    first_three_index = [sales_text_df.loc[0, "Specification"],sales_text_df.loc[1, "Specification"],sales_text_df.loc[2, "Specification"]]
+    first_three_index = [sales_text_df.loc[0, "norm_spec"],
+                         sales_text_df.loc[1, "norm_spec"],
+                         sales_text_df.loc[2, "norm_spec"]]
 
     for i, spec in enumerate(first_three_index):
         if not i == 2:
-            matching_index = (dfs[1]["Col_1"] == spec).idxmax()
+            matching_index = (dfs[1]["Col_3"] == spec).idxmax()
             sales_text_df.loc[i, "Value"] = dfs[1].loc[matching_index,"Col_2"]
         # some motors have the text "Maximum torque limted by gearbox" so for these I need to build a special structure
         elif i == 2:
@@ -54,7 +84,7 @@ def sales_text():
 
 
     # Version index 3, will always be in dfs[-1]
-    version_index = (dfs[-1]["Col_1"] == sales_text_df.loc[3, "Specification"]).idxmax()
+    version_index = (dfs[-1]["Col_3"] == sales_text_df.loc[3, "norm_spec"]).idxmax()
     if version_index == 1:
         sales_text_df.loc[3, "Value"] = dfs[-1].loc[version_index, "Col_2"]
     else:
@@ -63,18 +93,18 @@ def sales_text():
     if gearbox_check() == True:
         # index 4 & 5
         for i in range(4 ,6):
-            gb_spec = sales_text_df.loc[i, "Specification"]
+            gb_spec = sales_text_df.loc[i, "norm_spec"]
             for df in dfs:
                 for j, row in df.iterrows():
-                    if df.loc[j, "Col_1"] == sales_text_df.loc[i, "Specification"]: 
-                        if gb_spec in df["Col_1"].values:
-                            #gb_index = (df["Col_1"] == gb_spec).idxmax()
+                    if df.loc[j, "Col_3"] == sales_text_df.loc[i, "norm_spec"]: 
+                        if gb_spec in df["Col_3"].values:
+                            #gb_index = (df["Col_3"] == gb_spec).idxmax()
                             sales_text_df.loc[i, "Value"] = row['Col_2']
     elif not gearbox_check():
         for i in range(4,6):
             sales_text_df.loc[i, "Value"] = 'NA'
 
-    
+    sales_text_df.drop('norm_spec', axis=1, inplace=True)    
     return sales_text_df
 
 def inkoop_text():
@@ -88,7 +118,7 @@ def inkoop_text():
     # Motor
     for df in dfs:
         for i in df.index:
-            if df.loc[i, "Col_1"] == "Nominal Motor Voltage":
+            if df.loc[i, "Col_3"] == "nominalmotorvoltage":
                 motor_voltage = df.loc[i, "Col_2"]
                 motor_voltage = motor_voltage.replace(" ","")
                 break
@@ -112,7 +142,7 @@ def inkoop_text():
             # initially i was using enumerate but that is only for iterable items such as lists. For items inside of a df one must use .iterrows()
             # here i is still the index and then row is the content within the cells i.e. index , Col_1 , Col_2
             for i,row in df.iterrows():
-                if row['Col_1'] == "Reduction":
+                if row['Col_3'] == "reduction":
                     # here, my loc returns a df, thus I need to use iloc as it returns based on the index which in this new df will be 0
                     gb_reducation = row['Col_2']
                     gb_match = re.search(r'=(.*)', gb_reducation)
@@ -143,8 +173,8 @@ def inkoop_text():
     encoder_found = False
 
     for i,j in enumerate(attachment_list):
-        if j in brake_options:
-            inkoop_text_df.loc[2,"Details"] = attachment_list[i]
+        if j.replace(" ","") in brake_options:
+            inkoop_text_df.loc[2,"Details"] = attachment_list[i].replace(" ","")
             brake_found = True
             continue
         elif j[:2] in encoder_options:
@@ -164,10 +194,10 @@ def inkoop_text():
         for df in dfs:
             if df.loc[0,"Col_1"] == "Attachment":
                 for i,j in enumerate(df['Col_1']):
-                    if df.loc[i,"Col_2"] == "Power off brake":
+                    if df.loc[i,"Col_2"] == "Poweroffbrake":
                         brake_type = 'R'
                         break
-                    elif df.loc[i,"Col_2"] == "Power on brake":
+                    elif df.loc[i,"Col_2"] == "Poweronbrake":
                         brake_type = 'A'
                         break
                     else:
@@ -180,7 +210,7 @@ def inkoop_text():
     for df in dfs:
         if df.loc[0,"Col_1"] == "Attachment":
             for i,j in enumerate(df['Col_1']):
-                if df.loc[i, 'Col_1'] == "Protection Cover":
+                if df.loc[i, 'Col_1'] == "ProtectionCover":
                     cover_status = df.loc[i,'Col_2']
                 else:
                     cover_status = False
@@ -188,7 +218,7 @@ def inkoop_text():
         for df in dfs:
             if df.loc[0,"Col_1"] == "Attachment":
                 for i,j in enumerate(df['Col_1']):
-                    if df.loc[i, 'Col_1'] == "Protection class":
+                    if df.loc[i, 'Col_1'] == "Protectionclass":
                         protection_class = df.loc[i,'Col_2']
                         break
         
@@ -205,7 +235,7 @@ def inkoop_text():
     for df in dfs:
         if df.loc[0, "Col_1"] == "Attachment":
             for i,j in enumerate(df["Col_1"]):
-                if df.loc[i,"Col_1"] == "Encoder Channels":
+                if df.loc[i,"Col_1"] == "EncoderChannels":
                     encoder_channel = df.loc[i, "Col_2"]
                     break
                 else:
@@ -215,7 +245,7 @@ def inkoop_text():
     for df in dfs:
         if df.loc[0, "Col_1"] == "Attachment":
             for i,j in enumerate(df["Col_1"]):
-                if df.loc[i,"Col_1"] == "Encoder Resolution":
+                if df.loc[i,"Col_1"] == "EncoderResolution":
                     encoder_resolution = df.loc[i, "Col_2"]
                     e_stop_sign = encoder_resolution.find('p')
                     encoder_resolution = encoder_resolution[:e_stop_sign-1]
@@ -226,7 +256,7 @@ def inkoop_text():
     for df in dfs:
         if df.loc[0, "Col_1"] == "Attachment":
             for i,j in enumerate(df["Col_1"]):
-                if df.loc[i,"Col_1"] == "Encoder supply Voltage":
+                if df.loc[i,"Col_1"] == "EncodersupplyVoltage":
                     encoder_volt = df.loc[i, "Col_2"]+"V"
                     break
                 else:
@@ -252,7 +282,7 @@ def inkoop_text():
     if not encoder_channel:
         inkoop_text_df.loc[3, "Details"] = "NA"
     elif not str(encoder_text_p2) == "":
-        inkoop_text_df.loc[3, "Details"] = encoder_text_p1 + f'-{encoder_channel}-{encoder_resolution.strip()} {encoder_text_p2} {encoder_volt}'
+        inkoop_text_df.loc[3, "Details"] = encoder_text_p1 + f'-{encoder_channel}-{encoder_resolution.strip()}{encoder_text_p2} {encoder_volt}'
     else:
         inkoop_text_df.loc[3, "Details"] = encoder_text_p1 + f'-{encoder_channel}-{encoder_resolution.strip()} {encoder_volt}'
 
@@ -283,26 +313,54 @@ brake_options = ["E22","E38","E90", 'E100', 'E310','E600']
 
 encoder_options = ['RE','MG','MR','ME','AE']
 
-st.title("Dunker PDF Reader")
+st.title("📄 Dunker PDF Reader")
 
 uploaded_file = st.file_uploader("Upload your pdf")
 
+current_time = datetime.datetime.now().strftime("%Y-%m-%d")
+
 if uploaded_file:
+    st.markdown(
+        """
+        <p style="color: green; font-size: 18px; font-weight: bold;">
+        ✅ PDF uploaded successfully!
+        </p>
+        """,
+        unsafe_allow_html=True,
+    )
     try:
 
-        dfs = pdf_reader(uploaded_file)
+        dfs = pdf_reader_plumber(uploaded_file)
 
         sales_text_df = sales_text()
-        sales_text_df
+        st.subheader("Sales Text (editable)")
+        edited_sales_text = st.data_editor(sales_text_df, use_container_width=True)
 
         inkoop_text_df = inkoop_text()
-        inkoop_text_df
+        st.subheader("Purchase Text (editable)")
+        edited_inkoop_text = st.data_editor(inkoop_text_df, use_container_width=True)
 
         description_one = description_1()
         description_two = description_2()
 
-        print(description_1)
-        print(description_2)
+        st.subheader("Descriptions")
+        st.text_input("Description 1", description_one)
+        st.text_input("Description 2", description_two)
+
+        output = BytesIO()
+        with pd.ExcelWriter(output, engine="xlsxwriter") as writer:
+            edited_sales_text.to_excel(writer, index=False, sheet_name="Sales Text")
+            edited_inkoop_text.to_excel(writer, index=False, sheet_name="Inkoop Text")
+        output.seek(0)
+
+        st.download_button(
+            label="Download Data to Excel",
+            data=output,
+            file_name=f"{current_time} Article Description  {description_one[:5]}",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+
+        st.markdown("Made by Dave")
     except Exception as e:
         st.error(f"An error occured while processing file {e}")
 
