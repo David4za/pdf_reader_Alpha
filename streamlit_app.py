@@ -209,19 +209,20 @@ def inkoop_text():
         # cover details
     cover_status = False
     for df in dfs:
-        if df.loc[0,"Col_1"] == "Attachment":
-            for i,j in enumerate(df['Col_1']):
-                if df.loc[i, 'Col_1'] == "ProtectionCover":
-                    cover_status = df.loc[i,'Col_2']
+        for i, row in df.iterrows():
+                if row["Col_3"] == "protectioncover":
+                    cover_status = row["Col_2"]
+                    break
                 else:
                     cover_status = False
-
-        for df in dfs:
-            if df.loc[0,"Col_1"] == "Attachment":
-                for i,j in enumerate(df['Col_1']):
-                    if df.loc[i, 'Col_1'] == "Protectionclass":
-                        protection_class = df.loc[i,'Col_2']
-                        break
+    
+    for df in dfs:
+        for i, row in df.iterrows():
+            if row["Col_1"] == "Protectionclass":
+                protection_class = row["Col_2"]
+                break
+            else:
+                protection_class = "NA"
         
             if not cover_status:
                 inkoop_text_df.loc[4,"Details"] = "NA"
