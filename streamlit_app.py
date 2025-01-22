@@ -115,7 +115,9 @@ def inkoop_text():
         }
     d["Details"] = [None] * len(d["Keys"])
     inkoop_text_df = pd.DataFrame(data=d)
-
+    #add space between dProEC or dMoveIO
+    dfs[0].loc[0, "Col_1"] = re.sub(r'([a-z])([A-Z])',r'\1 \2', dfs[0].loc[0, "Col_1"])
+    
     # Motor
     for df in dfs:
         for i in df.index:
