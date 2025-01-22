@@ -224,12 +224,12 @@ def inkoop_text():
             else:
                 protection_class = "NA"
         
-            if not cover_status:
-                inkoop_text_df.loc[4,"Details"] = "NA"
-            elif  cover_status == "Yes":
-                inkoop_text_df.loc[4,"Details"] = protection_class
-            else:
-                inkoop_text_df.loc[4,"Details"] = "NA"
+    if not cover_status:
+        inkoop_text_df.loc[4,"Details"] = "NA"
+    elif  cover_status == "Yes":
+        inkoop_text_df.loc[4,"Details"] = protection_class
+    else:
+        inkoop_text_df.loc[4,"Details"] = "NA"
 
     # encoder details
 
