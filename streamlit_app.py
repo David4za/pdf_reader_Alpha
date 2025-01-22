@@ -329,6 +329,8 @@ brake_options = ["E22","E38","E90", 'E100', 'E310','E600']
 
 encoder_options = ['RE','MG','MR','ME','AE']
 
+FW_options = ["dMove", "dPro"]
+
 st.title("📄 Dunker PDF Reader")
 
 uploaded_file = st.file_uploader("Upload your pdf")
