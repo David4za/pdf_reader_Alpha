@@ -124,8 +124,6 @@ def inkoop_text():
         }
     d["Details"] = [None] * len(d["Keys"])
     inkoop_text_df = pd.DataFrame(data=d)
-    #add space between dProEC or dMoveIO
-    dfs[0].loc[0, "Col_1"] = re.sub(r'([a-z])([A-Z])',r'\1 \2', dfs[0].loc[0, "Col_1"])
     
     # Motor
     
@@ -241,7 +239,7 @@ def inkoop_text():
     
     for df in dfs:
         for i, row in df.iterrows():
-            if row["Col_1"] == "Protectionclass":
+            if row["Col_3"] == "protectionclass":
                 protection_class = row["Col_2"]
                 break
             else:
