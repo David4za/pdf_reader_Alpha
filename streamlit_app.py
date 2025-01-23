@@ -87,9 +87,18 @@ def sales_text():
     # Version index 3, will always be in dfs[-1]
     version_index = (dfs[-1]["Col_3"] == sales_text_df.loc[3, "norm_spec"]).idxmax()
     if version_index == 1:
-        sales_text_df.loc[3, "Value"] = dfs[-1].loc[version_index, "Col_2"]
+        original_text = dfs[-1].loc[version_index, "Col_2"]
+        og_split = original_text.split()
+        fw_part = og_split[-1]
+        if fw_part[:-2] in FW_options:
+            updated_fw = fw_part[:-2] + " " + fw_part[-2:]
+            original_text = original_text.replace(fw_part, updated_fw)
+            sales_text_df.loc[3, "Value"] = original_text
+        else:
+            original_text = original_text
+            sales_text_df.loc[3, "Value"] = original_text
     else:
-        sales_text_df.loc[3, "Value"] = 'NA'   
+        sales_text_df.loc[3, "Value"] = 'NA'    
 
     if gearbox_check() == True:
         # index 4 & 5
