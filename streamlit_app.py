@@ -393,7 +393,7 @@ if uploaded_file:
         st.download_button(
             label="Download Data to Excel",
             data=output,
-            file_name=f"{current_time} Article Description  {description_one[:5]}",
+            file_name=f"{current_time} Article Description  {description_one[:5]}.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
 
