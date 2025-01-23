@@ -151,7 +151,7 @@ def inkoop_text():
         if motor_voltage:
             break
   
-    inkoop_text_df.loc[0,"Details"] = dfs[0].loc[0,"Col_1"] + " " + motor_voltage
+    inkoop_text_df.loc[0,"Details"] = original_text + " " + motor_voltage
     
 
     # Gearbox
