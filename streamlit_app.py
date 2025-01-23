@@ -133,13 +133,13 @@ def inkoop_text():
     original_text = dfs[0].loc[0, "Col_1"]
     og_split = original_text.split()
     fw_part = og_split[-1]
-    
+
     if fw_part[:-2] in FW_options:
         updated_fw = fw_part[:-2] + " " + fw_part[-2:]
         original_text = original_text.replace(fw_part, updated_fw)
     else:
         original_text = original_text
-    
+
     for df in dfs:
         for i in df.index:
             if df.loc[i, "Col_3"] == "nominalmotorvoltage":
