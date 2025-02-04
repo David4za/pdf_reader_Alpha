@@ -316,7 +316,7 @@ def inkoop_text():
     if dfs[0].iloc[-1]["Col_1"] != "FW":
         inkoop_text_df.loc[5, "Details"] = "NA"
     else:
-        inkoop_text_df.loc[5, "Details"] = dfs[-1].loc[1, "Col_2"]
+        inkoop_text_df.loc[5, "Details"] = sales_text_df.loc[3, "Value"]
             
     # Sachnumbers
 
