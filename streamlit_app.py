@@ -119,7 +119,7 @@ def sales_text():
 
 def inkoop_text():
     d = {
-        "Keys":["Motor","Gearbox","Brake","Encoder","Cover"],
+        "Keys":["Motor","Gearbox","Brake","Encoder","Cover","FW","Sachnumber"],
         "Details":[None]
         }
     d["Details"] = [None] * len(d["Keys"])
@@ -310,6 +310,20 @@ def inkoop_text():
         inkoop_text_df.loc[3, "Details"] = encoder_text_p1 + f'-{encoder_channel}-{encoder_resolution.strip()} {encoder_volt}'
 
     inkoop_text_df.loc[0, "Details"] = re.sub(r'(\d+)\sX\s(\d+)', r'\1X\2', inkoop_text_df.loc[0, "Details"])
+
+    # FW
+
+    if dfs[0].iloc[-1]["Col_1"] != "FW":
+        inkoop_text_df.loc[5, "Details"] = "NA"
+    else:
+        inkoop_text_df.loc[5, "Details"] = dfs[-1].loc[1, "Col_2"]
+            
+    # Sachnumbers
+
+    sachnumbers = dfs[0]["Col_2"].tolist()
+    sach_string = ", ".join(str(x) for x in sachnumbers)
+    inkoop_text_df.loc[6, "Details"] = sach_string
+
     return inkoop_text_df
 
 def description_1():
