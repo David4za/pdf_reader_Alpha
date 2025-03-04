@@ -384,7 +384,7 @@ if uploaded_file:
         st.subheader("Purchase Text")
         with st.expander("Inkoop DateFrame (Editable)"):
             edited_inkoop_text_df = st.data_editor(inkoop_text_df, use_container_width=True)
-        edited_inkoop_text = "\n".join(f"{row['Keys']}: {row['Details']}" for i, row in edited_inkoop_text_df.iterrows())
+        edited_inkoop_text = "\n".join(f"{row['Keys']}: {row['Details']}\n" for i, row in edited_inkoop_text_df.iterrows())
 
         st.subheader("Inkoop Text")
         st.text(edited_inkoop_text)
